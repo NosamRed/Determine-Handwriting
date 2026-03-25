@@ -1,7 +1,7 @@
 import tensorflow as tf
-from tensorflow import keras, layers, models
+from tensorflow import keras
 import matplotlib.pyplot as plt
-import pytorch as pt
+# import pytorch as pt
 
 # Load the dataset
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -11,10 +11,10 @@ x_train = x_train.astype('float32') / 255.0
 y_test = y_test.astype('float32') / 255.0
 
 # Build the model
-model = models.Sequential([
-    layers.Flatten(input_shape=(28, 28)),
-    layers.Dense(128, activation='relu'),
-    layers.Dense(10, activation='softmax')
+model = keras.models.Sequential([
+    keras.layers.Flatten(input_shape=(28, 28)),
+    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Dense(10, activation='softmax')
 ])
 
 # Compile the model
