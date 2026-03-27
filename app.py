@@ -1,4 +1,13 @@
+import os
+
+# Set the environment variables to suppress TensorFlow logging
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # 0=all, 1=filter INFO, 2=filter WARNING, 3=filter ERROR
+
 import tensorflow as tf
+
+tf.get_logger().setLevel("ERROR") # Suppress GPU warnings
+
 from tensorflow import keras
 import matplotlib.pyplot as plt
 # import pytorch as pt
