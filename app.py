@@ -1,40 +1,80 @@
+# =========================
+# Suppress Warnings
+# =========================
 import os
-
-# Set the environment variables to suppress TensorFlow logging
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # 0=all, 1=filter INFO, 2=filter WARNING, 3=filter ERROR
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 import tensorflow as tf
+tf.get_logger().setLevel("ERROR")
 
-tf.get_logger().setLevel("ERROR") # Suppress GPU warnings
-
+# =========================
+# Imports
+# =========================
+import numpy as np
 from tensorflow import keras
-import matplotlib.pyplot as plt
-# import pytorch as pt
+from PIL import Image
 
-# Load the dataset
-(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+# =========================
+# Load Model
+# =========================
 
-# Normalize the data
-x_train = x_train.astype('float32') / 255.0
-y_test = y_test.astype('float32') / 255.0
+MODEL_PATH = "emnist_balanced_cnn.keras"
+model = keras.models.load_model(MODEL_PATH)
 
-# Build the model
-model = keras.models.Sequential([
-    keras.layers.Flatten(input_shape=(28, 28)),
-    keras.layers.Dense(128, activation='relu'),
-    keras.layers.Dense(10, activation='softmax')
-])
+# =========================
+# EMNIST Labels
+# =========================
+emnist_labels = [
+    '0','1','2','3','4','5','6','7','8','9',
+    'A','B','C','D','E','F','G','H','I','J',
+    'K','L','M','N','O','P','Q','R','S','T',
+    'U','V','W','X','Y','Z',
+    'a','b','d','e','f','g','h','n','q','r','t'
+]
 
-# Compile the model
-model.compile(
-    optimizer='adam',
-    loss='sparse_categorical_crossentropy',
-    metrics=['accuracy'])
+# =========================
+# Preprocess image function
+# =========================
+def preprocess_image(img_path, save_debug=True):
+    img = Image.open(img_path).convert("L")
+    img = img.resize((28, 28), Image.LANCZOS)
 
-# Train the model
-model.fit(x_train, y_train, epochs=5)
+    img_array = np.array(img)
 
-# Evaluate the model
-test_loss, test_acc = model.evaluate(x_test, y_test)
-print(f'Test accuracy: {test_acc}')
+    # Make sure character is white and background is black
+    if img_array.mean() > 127:
+        img_array = 255 - img_array
+
+    img_array = img_array.astype("float32") / 255.0
+    x = np.expand_dims(img_array, axis=(0, -1))
+
+    if save_debug:
+        debug_img = (img_array * 255).astype(np.uint8)
+        Image.fromarray(debug_img).save("debug_preprocessed.png")
+        print("Saved debug image to debug_preprocessed.png")
+
+    return x
+
+# =========================
+# Predict
+# =========================
+image_path = "test-image.png"
+x = preprocess_image(image_path)
+
+pred = model.predict(x, verbose=0)[0]
+predicted_class = int(np.argmax(pred))
+
+print(f"Predicted class index: {predicted_class}")
+
+if predicted_class < len(emnist_labels):
+    print(f"Predicted label: {emnist_labels[predicted_class]}")
+else:
+    print("Predicted label index is outside emnist_labels list!")
+
+# Show top 5 predictions
+top5 = np.argsort(pred)[-5:][::-1]
+print("\nTop 5 predictions:")
+for i in top5:
+    label = emnist_labels[i] if i < len(emnist_labels) else f"UNKNOWN({i})"
+    print(f"{i}: {label} -> {pred[i]:.4f}")
