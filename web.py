@@ -24,7 +24,7 @@ def index():
             try:
                 result = predictFromPath(filepath)
 
-                # 🔥 Build result HTML manually
+                #Build result HTML manually
                 result_html = f"""
                 <h2>Prediction: {result['predicted_label']}</h2>
                 <p>Confidence: {result['confidence'] * 100:.2f}%</p>
@@ -37,7 +37,7 @@ def index():
             except Exception as e:
                 result_html = f"<p style='color:red;'>Error: {e}</p>"
 
-    # 🔥 Return full HTML page directly
+    #Return full HTML page directly
     return f"""
     <!DOCTYPE html>
     <html>
