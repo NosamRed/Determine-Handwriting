@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Letter AI</title>
+</head>
+<body>
+    <h1>Upload a Letter Image</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required>
+        <br><br>
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if error %}
+        <p style="color:red;">Error: {{ error }}</p>
+    {% endif %}
+
+    {% if result %}
+        <h2>Prediction: {{ result.predicted_label }}</h2>
+        <p>Confidence: {{ "%.2f"|format(result.confidence * 100) }}%</p>
+
+        <h3>Top 5 Predictions:</h3>
+        <ul>
+            {% for item in result.top5 %}
+                <li>{{ item.label }} - {{ "%.2f"|format(item.confidence * 100) }}%</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>

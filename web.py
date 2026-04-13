@@ -1,63 +1,34 @@
-from flask import Flask, request
+from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
 import os
 
-from app import predictFromPath
+from predictor import predict_from_path
 
 app = Flask(__name__)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-
 @app.route("/", methods=["GET", "POST"])
 def index():
-    result_html = ""
+    result = None
+    error = None
 
     if request.method == "POST":
-        file = request.files["image"]
+        file = request.files.get("image")
 
-        if file and file.filename != "":
+        if not file or file.filename == "":
+            error = "Please select an image file."
+        else:
             filepath = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
             file.save(filepath)
 
             try:
-                result = predictFromPath(filepath)
-
-                #Build result HTML manually
-                result_html = f"""
-                <h2>Prediction: {result['predicted_label']}</h2>
-                <p>Confidence: {result['confidence'] * 100:.2f}%</p>
-
-                <h3>Top 5 Predictions:</h3>
-                <ul>
-                {"".join([f"<li>{item['label']} - {item['confidence']*100:.2f}%</li>" for item in result['top5']])}
-                </ul>
-                """
+                result = predict_from_path(filepath)
             except Exception as e:
-                result_html = f"<p style='color:red;'>Error: {e}</p>"
+                error = str(e)
 
-    #Return full HTML page directly
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Letter AI</title>
-    </head>
-    <body>
-        <h1>Upload a Letter Image</h1>
-
-        <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="image" accept="image/*" required>
-            <br><br>
-            <button type="submit">Predict</button>
-        </form>
-
-        {result_html}
-    </body>
-    </html>
-    """
-
+    return render_template("index.html", result=result, error=error)
 
 if __name__ == "__main__":
     import webbrowser
