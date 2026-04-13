@@ -25,7 +25,7 @@ model = keras.models.load_model(MODEL_PATH)
 # =========================
 # EMNIST Labels
 # =========================
-emnist_labels = [
+emnistLabels = [
     '0','1','2','3','4','5','6','7','8','9',
     'A','B','C','D','E','F','G','H','I','J',
     'K','L','M','N','O','P','Q','R','S','T',
@@ -36,7 +36,7 @@ emnist_labels = [
 # =========================
 # Preprocess image function
 # =========================
-def preprocess_image(img_path, save_debug=True):
+def preprocessImage(img_path, save_debug=True):
     img = Image.open(img_path).convert("L")
     img = img.resize((28, 28), Image.LANCZOS)
 
@@ -55,26 +55,49 @@ def preprocess_image(img_path, save_debug=True):
         print("Saved debug image to debug_preprocessed.png")
 
     return x
+# =========================
+# Function for website
+# =========================
+def predictFromPath(imagePath, saveDebug=False):
+    x = preprocessImage(imagePath, save_debug=saveDebug)
+
+    pred = model.predict(x, verbose=0)[0]
+    predictedClass = int(np.argmax(pred))
+
+    if predictedClass < len(emnistLabels):
+        predictedLabel = emnistLabels[predictedClass]
+    else:
+        predictedLabel = "UNKNOWN"
+
+    confidence = float(pred[predictedClass])
+
+    top5 = np.argsort(pred)[-5:][::-1]
+    top5_results = []
+    for i in top5:
+        label = emnistLabels[i] if i < len(emnistLabels) else f"UNKNOWN({i})"
+        top5_results.append({
+            "index": int(i),
+            "label": label,
+            "confidence": float(pred[i])
+        })
+
+    return {
+        "predicted_class": predictedClass,
+        "predicted_label": predictedLabel,
+        "confidence": confidence,
+        "top5": top5_results
+    }
 
 # =========================
-# Predict
+# Run local test only
 # =========================
-image_path = "test-image.png"
-x = preprocess_image(image_path)
+if __name__ == "__main__":
+    imagePath = "test-image.png"
+    result = predictFromPath(imagePath, saveDebug=True)
 
-pred = model.predict(x, verbose=0)[0]
-predicted_class = int(np.argmax(pred))
+    print(f"Predicted class index: {result['predicted_class']}")
+    print(f"Predicted label: {result['predicted_label']}")
 
-print(f"Predicted class index: {predicted_class}")
-
-if predicted_class < len(emnist_labels):
-    print(f"Predicted label: {emnist_labels[predicted_class]}")
-else:
-    print("Predicted label index is outside emnist_labels list!")
-
-# Show top 5 predictions
-top5 = np.argsort(pred)[-5:][::-1]
-print("\nTop 5 predictions:")
-for i in top5:
-    label = emnist_labels[i] if i < len(emnist_labels) else f"UNKNOWN({i})"
-    print(f"{i}: {label} -> {pred[i]:.4f}")
+    print("\nTop 5 predictions:")
+    for item in result["top5"]:
+        print(f"{item['index']}: {item['label']} -> {item['confidence']:.4f}")
