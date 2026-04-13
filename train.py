@@ -19,7 +19,7 @@ from tensorflow.keras import layers
 # =========================
 # File Paths
 # =========================
-DATA_PATH = "data/"  # Folder where your .gz files are
+DATA_PATH = "training-data/"  # Folder where your .gz files are
 
 train_images_path = DATA_PATH + "emnist-balanced-train-images-idx3-ubyte.gz"
 train_labels_path = DATA_PATH + "emnist-balanced-train-labels-idx1-ubyte.gz"

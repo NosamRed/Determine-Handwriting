@@ -26,6 +26,7 @@ def preprocess_image(img_path, save_debug=False):
 
     img_array = np.array(img)
 
+    # Make character white and background black
     if img_array.mean() > 127:
         img_array = 255 - img_array
 
@@ -68,13 +69,3 @@ def predict_from_path(image_path, save_debug=False):
         "confidence": confidence,
         "top5": top5_results
     }
-
-if __name__ == "__main__":
-    image_path = "test-image.png"
-    result = predict_from_path(image_path, save_debug=True)
-
-    print(f"Predicted class index: {result['predicted_class']}")
-    print(f"Predicted label: {result['predicted_label']}")
-    print("\nTop 5 predictions:")
-    for item in result["top5"]:
-        print(f"{item['index']}: {item['label']} -> {item['confidence']:.4f}")
