@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 from werkzeug.utils import secure_filename
 import os
 import base64
@@ -7,13 +7,15 @@ import uuid
 from predictor import predict_from_path
 
 app = Flask(__name__)
+app.secret_key = "your_secret_key_here"
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route("/", methods=["GET"])
 def index():
-    return render_template("index.html", result=None, error=None)
+    word = "".join(session.get("letters", []))
+    return render_template("index.html", result=None, word=word, error=None)
 
 @app.route("/upload", methods=["POST"])
 def upload():
@@ -24,20 +26,24 @@ def upload():
 
     if not file or file.filename == "":
         error = "Please select an image file."
-        return render_template("index.html", result=result, error=error)
+        word = "".join(session.get("letters", []))
+        return render_template("index.html", result=result, word=word, error=error)
 
     filepath = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
     file.save(filepath)
 
     try:
         result = predict_from_path(filepath)
+        session.setdefault("letters", []).append(result["predicted_label"])
+        session.modified = True
     except Exception as e:
         error = str(e)
     finally:
         if os.path.exists(filepath):
             os.remove(filepath)
 
-    return render_template("index.html", result=result, error=error)
+    word = "".join(session.get("letters", []))
+    return render_template("index.html", result=result, word=word, error=error)
 
 @app.route("/draw", methods=["POST"])
 def draw():
@@ -48,10 +54,10 @@ def draw():
 
     if not image_data:
         error = "No drawing data received."
-        return render_template("index.html", result=result, error=error)
+        word = "".join(session.get("letters", []))
+        return render_template("index.html", result=result, word=word, error=error)
 
     try:
-        # Remove "data:image/png;base64," part
         header, encoded = image_data.split(",", 1)
         image_bytes = base64.b64decode(encoded)
 
@@ -62,6 +68,8 @@ def draw():
             f.write(image_bytes)
 
         result = predict_from_path(filepath)
+        session.setdefault("letters", []).append(result["predicted_label"])
+        session.modified = True
 
     except Exception as e:
         error = str(e)
@@ -70,7 +78,13 @@ def draw():
         if 'filepath' in locals() and os.path.exists(filepath):
             os.remove(filepath)
 
-    return render_template("index.html", result=result, error=error)
+    word = "".join(session.get("letters", []))
+    return render_template("index.html", result=result, word=word, error=error)
+
+@app.route("/clear", methods=["POST"])
+def clear():
+    session.pop("letters", None)
+    return render_template("index.html", result=None, word="", error=None)
 
 if __name__ == "__main__":
     import webbrowser

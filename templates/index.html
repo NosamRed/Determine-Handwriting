@@ -24,6 +24,46 @@
             padding: 8px 14px;
             cursor: pointer;
         }
+
+        #word-display {
+            font-size: 36px;
+            letter-spacing: 6px;
+            font-weight: bold;
+            margin: 10px 0;
+            min-height: 50px;
+        }
+
+        .confidence-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .confidence-bar-label {
+            width: 20px;
+            font-weight: bold;
+        }
+
+        .confidence-bar-bg {
+            flex: 1;
+            background: #eee;
+            border-radius: 4px;
+            height: 18px;
+        }
+
+        .confidence-bar-fill {
+            height: 18px;
+            background: #4a90d9;
+            border-radius: 4px;
+        }
+
+        .confidence-bar-pct {
+            width: 50px;
+            text-align: right;
+            font-size: 14px;
+            color: #555;
+        }
     </style>
 </head>
 <body>
@@ -57,16 +97,30 @@
     {% endif %}
 
     {% if result %}
-        <h2>Prediction: {{ result.predicted_label }}</h2>
-        <p>Confidence: {{ "%.2f"|format(result.confidence * 100) }}%</p>
+        <div class="section">
+            <h2>Prediction: {{ result.predicted_label }}</h2>
+            <p>Confidence: {{ "%.2f"|format(result.confidence * 100) }}%</p>
 
-        <h3>Top 5 Predictions:</h3>
-        <ul>
+            <h3>Top 5 Predictions:</h3>
             {% for item in result.top5 %}
-                <li>{{ item.label }} - {{ "%.2f"|format(item.confidence * 100) }}%</li>
+                <div class="confidence-bar-container">
+                    <span class="confidence-bar-label">{{ item.label }}</span>
+                    <div class="confidence-bar-bg">
+                        <div class="confidence-bar-fill" style="width: {{ "%.1f"|format(item.confidence * 100) }}%;"></div>
+                    </div>
+                    <span class="confidence-bar-pct">{{ "%.1f"|format(item.confidence * 100) }}%</span>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% endif %}
+
+    <div class="section">
+        <h2>Word Builder</h2>
+        <div id="word-display">{{ word if word else "—" }}</div>
+        <form method="POST" action="/clear">
+            <button type="submit">Clear Word</button>
+        </form>
+    </div>
 
     <script>
         const canvas = document.getElementById("drawCanvas");
@@ -74,7 +128,6 @@
 
         let drawing = false;
 
-        // Fill white background
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -104,13 +157,8 @@
             ctx.stroke();
         });
 
-        canvas.addEventListener("mouseup", () => {
-            drawing = false;
-        });
-
-        canvas.addEventListener("mouseleave", () => {
-            drawing = false;
-        });
+        canvas.addEventListener("mouseup", () => { drawing = false; });
+        canvas.addEventListener("mouseleave", () => { drawing = false; });
 
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
